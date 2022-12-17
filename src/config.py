@@ -33,7 +33,7 @@ class Config:
     def get_server_url(self):
         return self.config.get('server', 'url')
 
-    def get_device(self, device_name):
+    def get_device_config(self, device_name: str):
         if not self.config.has_option('devices', device_name):
             connection_string = input(f'Podaj connection_string urządzenia {device_name}: ')
             self.config.set('devices', device_name, connection_string)
