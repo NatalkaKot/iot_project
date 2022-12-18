@@ -21,7 +21,9 @@ async def main():
 
                 agents.append(agent)
 
-        print(agents)
+        while True:
+            for agent in agents:
+                await agent.send_telemetry()
 
 if __name__ == '__main__':
     loop = get_event_loop()
