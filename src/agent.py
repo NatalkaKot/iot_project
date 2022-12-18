@@ -36,11 +36,20 @@ class Agent:
         self.iothub_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
         self.iothub_client.connect()
 
+        self.__tasks = []
+
     def __repr__(self) -> str:
         return f'Agent ({self.device_name or "Nieznane urządzenie"})'
 
     def __str__(self) -> str:
         return self.__repr__()
+
+    @property
+    def tasks(self):
+        tasks = self.__tasks.copy()
+        tasks.append(self.send_telemetry())
+        self.__tasks.clear()
+        return tasks
 
     async def create(self):
         self.device_name = (await self.device.read_browse_name()).Name
