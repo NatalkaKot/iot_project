@@ -1,6 +1,6 @@
 from asyncua.common.node import Node
 from asyncua import Client, ua
-from azure.iot.device import IoTHubDeviceClient, Message
+from azure.iot.device import IoTHubDeviceClient, Message, MethodRequest, MethodResponse
 from typing import Literal, Union
 from uuid import uuid4
 from datetime import datetime
@@ -36,6 +36,9 @@ class Agent:
         self.iothub_client = IoTHubDeviceClient.create_from_connection_string(connection_string)
         self.iothub_client.connect()
 
+        self.iothub_client.on_twin_desired_properties_patch_received = self.on_twin_desired_properties_patch_received_handler
+        self.iothub_client.on_method_request_received = self.on_method_request_received_handler
+
         self.__tasks = []
 
     def __repr__(self) -> str:
@@ -60,7 +63,8 @@ class Agent:
         return property_node if not with_value else await property_node.read_value()
 
     async def set_property(self, property_name: Property, value: ua.Variant):
-        await self.device.get_child(property_name).write_value(value)
+        property_node = await self.device.get_child(property_name)
+        await property_node.write_value(value)
 
     async def call_method(self, method_name: Method):
         await self.device.call_method(method_name)
@@ -86,3 +90,41 @@ class Agent:
             message_id=str(uuid4())
         )
         self.iothub_client.send_message(message)
+
+    def on_twin_desired_properties_patch_received_handler(self, patch: dict):
+        if 'ProductionRate' in patch:
+            self.__tasks.append(self.set_property(
+                property_name='ProductionRate',
+                value=ua.Variant(patch['ProductionRate'], ua.VariantType.Int32)
+            ))
+
+            print('Zaktualizowano ProductionRate na', patch['ProductionRate'])
+
+    def on_method_request_received_handler(self, method_request: MethodRequest):
+        if method_request.name == 'EmergencyStop':
+            self.__tasks.append(self.call_method('EmergencyStop'))
+            method_response = MethodResponse.create_from_method_request(
+                method_request,
+                200,
+                'EmergencyStop'
+            )
+            self.iothub_client.send_method_response(method_response)
+        elif method_request.name == 'ResetErrorStatus':
+            self.__tasks.append(self.call_method('ResetErrorStatus'))
+            method_response = MethodResponse.create_from_method_request(
+                method_request,
+                200,
+                'ResetErrorStatus'
+            )
+            self.iothub_client.send_method_response(method_response)
+        elif method_request.name == 'MaintenanceDone':
+            self.iothub_client.patch_twin_reported_properties({
+                'MaintenanceDone': datetime.now().isoformat()
+            })
+        else:
+            method_response = MethodResponse.create_from_method_request(
+                method_request,
+                404,
+                'Metoda nie istnieje'
+            )
+            self.iothub_client.send_method_response(method_response)
