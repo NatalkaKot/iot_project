@@ -6,7 +6,7 @@ from config import Config
 
 async def main():
     config = Config()
-    agents = []
+    agents, subscriptions = [], []
 
     async with Client(config.get_server_url()) as client:
         objects = client.get_objects_node()
@@ -20,6 +20,11 @@ async def main():
                 ).create()
 
                 agents.append(agent)
+
+                subscription = await client.create_subscription(250, agent)
+                await subscription.subscribe_data_change(await agent.subscribed_properties())
+
+                subscriptions.append(subscription)
 
         while True:
             for agent in agents:

@@ -40,6 +40,7 @@ class Agent:
         self.iothub_client.on_method_request_received = self.on_method_request_received_handler
 
         self.__tasks = []
+        self.__errors = []
 
     def __repr__(self) -> str:
         return f'Agent ({self.device_name or "Nieznane urządzenie"})'
@@ -53,6 +54,12 @@ class Agent:
         tasks.append(self.send_telemetry())
         self.__tasks.clear()
         return tasks
+
+    async def subscribed_properties(self):
+        return [
+            await self.get_property('ProductionRate'),
+            await self.get_property('DeviceError')
+        ]
 
     async def create(self):
         self.device_name = (await self.device.read_browse_name()).Name
@@ -128,3 +135,27 @@ class Agent:
                 'Metoda nie istnieje'
             )
             self.iothub_client.send_method_response(method_response)
+
+    async def datachange_notification(self, node, value, _):
+        name = (await node.read_browse_name()).Name
+        if name == 'ProductionRate':
+            self.iothub_client.patch_twin_reported_properties({
+                'ProductionRate': value
+            })
+
+        elif name == 'DeviceError':
+            self.__errors.clear()
+            errors = {
+                1: 'Emergency Stop',
+                2: 'Power Failure',
+                4: 'Sensor Failure',
+                8: 'Unknown'
+            }
+
+            for err_value, error in errors.items():
+                if value & err_value:
+                    if error not in self.__errors:
+                        self.__errors.append(error)
+                        self.send_message({'DeviceError': error}, 'event')
+                        self.iothub_client.patch_twin_reported_properties({"LastErrorDate": datetime.now().isoformat()})
+            self.iothub_client.patch_twin_reported_properties({"DeviceError": self.__errors})
