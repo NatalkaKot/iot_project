@@ -1,0 +1,13 @@
+{
+  "Name": "production-rate-kpi-handler",
+  "DataSourceType": "Azure Function",
+  "AzureFunctionProperties": {
+      "FunctionAppName": "funkcje",
+      "FunctionName": "ProductionKpiHandler",
+      "ApiKey": null,
+      "MaxBatchSize": 262144,
+      "MaxBatchCount": 100
+  },
+  "DataSourceCredentialDomain": null,
+  "ScriptType": "Output"
+}

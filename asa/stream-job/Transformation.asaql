@@ -1,0 +1,63 @@
+--błędy w okienku 15 minutowym
+select
+    IoTHub.ConnectionDeviceId as DeviceId,
+    count(*) as ErrorCounts
+into [emergency-stop-handler]
+from [iot-in]
+where MessageType = 'Event'
+group by IoTHub.ConnectionDeviceId, SlidingWindow(minute, 15)
+having count(*) > 3;
+
+--production kpi w okienku 15 minutowym
+select
+    DateAdd(minute,-15,System.Timestamp()) as StartTimestamp,
+    System.Timestamp() as EndTimestamp,
+    IoTHub.ConnectionDeviceId as DeviceId,
+    Sum(GoodCount) * 100 / (Sum(GoodCount) + Sum(BadCount)) as ProductionKpi
+into [production-rate-kpi-handler]
+from [iot-in]
+where MessageType = 'Telemetry'
+group by IoTHub.ConnectionDeviceId, TumblingWindow(minute, 15);
+
+select
+    DateAdd(minute,-15,System.Timestamp()) as StartTimestamp,
+    System.Timestamp() as EndTimestamp,
+    IoTHub.ConnectionDeviceId as DeviceId,
+    Sum(GoodCount) * 100 / (Sum(GoodCount) + Sum(BadCount)) as ProductionKpi
+into [kpi-blob]
+from [iot-in]
+where MessageType = 'Telemetry'
+group by IoTHub.ConnectionDeviceId, TumblingWindow(minute, 15);
+
+--temperatura w okienku 5 minutowym
+select
+    DateAdd(minute,-5,System.Timestamp()) as StartTimestamp,
+    System.Timestamp() as EndTimestamp,
+    IoTHub.ConnectionDeviceId as DeviceId,
+    Max(Temperature) as max,
+    Min(Temperature) as min,
+    Avg(Temperature) as avg
+into [temperature-blob]
+from [iot-in]
+where MessageType = 'Telemetry'
+group by IoTHub.ConnectionDeviceId, TumblingWindow(minute, 5);
+
+--błędy w okienku 30 minutowym
+select
+    DateAdd(minute,-30,System.Timestamp()) as StartTimestamp,
+    IoTHub.ConnectionDeviceId as DeviceId,
+    Count(error) as errorCount
+into [error-30-blob]
+from [iot-in]
+where MessageType = 'Event'
+group by IoTHub.ConnectionDeviceId, TumblingWindow(minute, 30);
+
+--suma good i bad count per workorder id
+select
+    WorkorderId,
+    Max(GoodCount) as Good,
+    Max(BadCount) as Bad
+into [production-blob]
+from [iot-in]
+where MessageType = 'Telemetry'
+group by WorkorderId, SessionWindow(minute, 2, 1440);

@@ -1,0 +1,38 @@
+{
+    "name": "stream-job",
+    "startFile": "Transformation.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Outputs/emergency-stop-handler.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/error-30-blob.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/kpi-blob.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/production-blob.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/production-rate-kpi-handler.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/temperature-blob.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Inputs/iot-in.json",
+            "subType": "Input"
+        }
+    ]
+}

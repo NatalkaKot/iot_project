@@ -1,0 +1,13 @@
+{
+  "Name": "emergency-stop-handler",
+  "DataSourceType": "Azure Function",
+  "AzureFunctionProperties": {
+      "FunctionAppName": "funkcje",
+      "FunctionName": "EmergencyStopHandler",
+      "ApiKey": null,
+      "MaxBatchSize": 262144,
+      "MaxBatchCount": 100
+  },
+  "DataSourceCredentialDomain": null,
+  "ScriptType": "Output"
+}
