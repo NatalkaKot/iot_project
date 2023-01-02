@@ -8,7 +8,7 @@ where MessageType = 'Event'
 group by IoTHub.ConnectionDeviceId, SlidingWindow(minute, 15)
 having count(*) > 3;
 
---production kpi w okienku 15 minutowym
+--production kpi w okienku 15 minutowym (dla funkcji)
 select
     DateAdd(minute,-15,System.Timestamp()) as StartTimestamp,
     System.Timestamp() as EndTimestamp,
@@ -19,6 +19,7 @@ from [iot-in]
 where MessageType = 'Telemetry'
 group by IoTHub.ConnectionDeviceId, TumblingWindow(minute, 15);
 
+--production kpi w okienku 15 minutowym
 select
     DateAdd(minute,-15,System.Timestamp()) as StartTimestamp,
     System.Timestamp() as EndTimestamp,
